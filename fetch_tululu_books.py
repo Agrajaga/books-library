@@ -78,8 +78,8 @@ if __name__ == "__main__":
     HOST_URL = "https://tululu.org/"
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("start_id", type=int, default=1)
-    parser.add_argument("end_id", type=int, default=2)
+    parser.add_argument("--start_id", type=int, default=1)
+    parser.add_argument("--end_id", type=int, default=10)
 
     args = parser.parse_args()
 
