@@ -67,6 +67,12 @@ if __name__ == "__main__":
             image_name = urlsplit(image_source).path.split("/")[-1]
             download_image(image_source, image_name)
 
+            print(title)
+            for div_tag in soup.find_all(class_="texts"):
+                comment_tag = div_tag.find("span", class_="black")
+                print(comment_tag.text)
+            print()
+            
             params = {
                 "id": index,
             }
