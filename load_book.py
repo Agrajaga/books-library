@@ -1,3 +1,4 @@
+import argparse
 import os
 from urllib.parse import urlencode, urljoin, urlsplit
 
@@ -76,13 +77,20 @@ def download_image(url, filename, folder="images/"):
 if __name__ == "__main__":
     HOST_URL = "https://tululu.org/"
 
-    for index in range(1, 11):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("start_id", type=int, default=1)
+    parser.add_argument("end_id", type=int, default=2)
+
+    args = parser.parse_args()
+
+
+    for index in range(args.start_id, args.end_id + 1):
         book_url = urljoin(HOST_URL, f"b{index}/")
         response = get(book_url)
         response.raise_for_status()
         try:
             check_for_redirect(response)
-            book_props = parse_book_page(response.text, HOST_URL)
+            book_props = parse_book_page(response.text)
             print(book_props["title"])
             print(book_props["genres"])
             print()
