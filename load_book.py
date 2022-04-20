@@ -1,9 +1,35 @@
 import os
-from urllib.parse import urlsplit, urljoin, urlencode
+from urllib.parse import urlencode, urljoin, urlsplit
 
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 from requests import HTTPError, Response, get
+
+
+def parse_book_page(html_content: str) -> dict:
+    soup = BeautifulSoup(html_content, "lxml")
+    caption_tag = soup.find(id="content").find("h1")
+    caption = caption_tag.text
+    title, author = map(str.strip, caption.split("::"))
+
+    img_tag = soup.find(class_="bookimage").find("img")
+    image_source = img_tag["src"]
+
+    genre_tags = soup.find("span", class_="d_book").find_all("a")
+    genres = [genre_tag.text for genre_tag in genre_tags]
+
+    comments = []
+    for div_tag in soup.find_all(class_="texts"):
+        comment_tag = div_tag.find("span", class_="black")
+        comments.append(comment_tag.text)
+
+    return {
+        "title": title,
+        "author": author,
+        "relative_image_url": image_source,
+        "genres": genres,
+        "comments": comments,
+    }
 
 
 def check_for_redirect(response: Response) -> None:
@@ -48,40 +74,29 @@ def download_image(url, filename, folder="images/"):
 
 
 if __name__ == "__main__":
-    os.makedirs("books", exist_ok=True)
+    HOST_URL = "https://tululu.org/"
 
     for index in range(1, 11):
-        book_url = f"https://tululu.org/b{index}/"
+        book_url = urljoin(HOST_URL, f"b{index}/")
         response = get(book_url)
         response.raise_for_status()
         try:
             check_for_redirect(response)
-
-            soup = BeautifulSoup(response.text, "lxml")
-            caption_tag = soup.find(id="content").find("h1")
-            caption = caption_tag.text
-            title, author = map(str.strip, caption.split("::"))
-            print(title)
-            img_tag = soup.find(class_="bookimage").find("img")
-            image_source = urljoin("https://tululu.org", img_tag["src"])
-            genre_tags = soup.find("span", class_="d_book").find_all("a")
-            genres = [genre_tag.text for genre_tag in genre_tags]
-            print(genres)
-
-            image_name = urlsplit(image_source).path.split("/")[-1]
-            download_image(image_source, image_name)
-
-            for div_tag in soup.find_all(class_="texts"):
-                comment_tag = div_tag.find("span", class_="black")
-
+            book_props = parse_book_page(response.text, HOST_URL)
+            print(book_props["title"])
+            print(book_props["genres"])
             print()
 
             params = {
                 "id": index,
             }
-            txt_url = f"https://tululu.org/txt.php?{urlencode(params)}"
-            filename = f"{index}. {title}"
+            txt_url = urljoin(HOST_URL, f"txt.php?{urlencode(params)}")
+            filename = f"{index}. {book_props['title']}"
             download_txt(txt_url, filename)
+
+            image_source = urljoin(HOST_URL, book_props["relative_image_url"])
+            image_name = urlsplit(image_source).path.split("/")[-1]
+            download_image(image_source, image_name)
+
         except HTTPError:
             pass
-        
