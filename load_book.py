@@ -61,18 +61,21 @@ if __name__ == "__main__":
             caption_tag = soup.find(id="content").find("h1")
             caption = caption_tag.text
             title, author = map(str.strip, caption.split("::"))
+            print(title)
             img_tag = soup.find(class_="bookimage").find("img")
             image_source = urljoin("https://tululu.org", img_tag["src"])
+            genre_tags = soup.find("span", class_="d_book").find_all("a")
+            genres = [genre_tag.text for genre_tag in genre_tags]
+            print(genres)
 
             image_name = urlsplit(image_source).path.split("/")[-1]
             download_image(image_source, image_name)
 
-            print(title)
             for div_tag in soup.find_all(class_="texts"):
                 comment_tag = div_tag.find("span", class_="black")
-                print(comment_tag.text)
+
             print()
-            
+
             params = {
                 "id": index,
             }
@@ -80,5 +83,5 @@ if __name__ == "__main__":
             filename = f"{index}. {title}"
             download_txt(txt_url, filename)
         except HTTPError:
-            print(f"HTTPError on {index}")
+            pass
         
