@@ -5,6 +5,7 @@ from urllib.parse import urlencode, urljoin, urlsplit
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 from requests import HTTPError, Response, get
+from tqdm import tqdm
 
 
 def parse_book_page(html_content: str) -> dict:
@@ -83,28 +84,24 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    with tqdm(total=args.end_id + 1 - args.start_id) as progressbar:
+        for index in range(args.start_id, args.end_id + 1):
+            book_url = urljoin(HOST_URL, f"b{index}/")
+            response = get(book_url)
+            response.raise_for_status()
+            try:
+                check_for_redirect(response)
+                book_props = parse_book_page(response.text)
+                params = {
+                    "id": index,
+                }
+                txt_url = urljoin(HOST_URL, f"txt.php?{urlencode(params)}")
+                filename = f"{index}. {book_props['title']}"
+                download_txt(txt_url, filename)
 
-    for index in range(args.start_id, args.end_id + 1):
-        book_url = urljoin(HOST_URL, f"b{index}/")
-        response = get(book_url)
-        response.raise_for_status()
-        try:
-            check_for_redirect(response)
-            book_props = parse_book_page(response.text)
-            print(book_props["title"])
-            print(book_props["genres"])
-            print()
-
-            params = {
-                "id": index,
-            }
-            txt_url = urljoin(HOST_URL, f"txt.php?{urlencode(params)}")
-            filename = f"{index}. {book_props['title']}"
-            download_txt(txt_url, filename)
-
-            image_source = urljoin(HOST_URL, book_props["relative_image_url"])
-            image_name = urlsplit(image_source).path.split("/")[-1]
-            download_image(image_source, image_name)
-
-        except HTTPError:
-            pass
+                image_source = urljoin(HOST_URL, book_props["relative_image_url"])
+                image_name = urlsplit(image_source).path.split("/")[-1]
+                download_image(image_source, image_name)
+            except HTTPError:
+                pass
+            progressbar.update()
