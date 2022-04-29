@@ -1,12 +1,14 @@
 import argparse
 import os
+import sys
+from time import sleep
 from urllib.parse import urlencode, urljoin, urlsplit
 
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
-from requests import HTTPError, Response, get
+from requests import Response, get
+from requests.exceptions import ConnectionError, HTTPError, Timeout
 from tqdm import tqdm
-
 
 HOST_URL = "https://tululu.org/"
 
@@ -51,7 +53,7 @@ def download_txt(url, filename, folder="books/"):
     Returns:
         str: Путь до файла, куда сохранён текст.
     """
-    response = get(url)
+    response = get(url, timeout=5)
     response.raise_for_status()
     check_for_redirect(response)
 
@@ -65,7 +67,7 @@ def download_txt(url, filename, folder="books/"):
 
 
 def download_image(url, filename, folder="images/"):
-    response = get(url)
+    response = get(url, timeout=5)
     response.raise_for_status()
     check_for_redirect(response)
 
@@ -88,23 +90,32 @@ if __name__ == "__main__":
 
     with tqdm(total=args.end_id + 1 - args.start_id) as progressbar:
         for index in range(args.start_id, args.end_id + 1):
-            book_url = urljoin(HOST_URL, f"b{index}/")
-            response = get(book_url)
-            response.raise_for_status()
-            try:
-                check_for_redirect(response)
-                book_props = parse_book_page(response.text)
-                params = {
-                    "id": index,
-                }
-                txt_url = urljoin(HOST_URL, f"txt.php?{urlencode(params)}")
-                filename = f"{index}. {book_props['title']}"
-                download_txt(txt_url, filename)
+            while True:
+                try:
+                    book_url = urljoin(HOST_URL, f"b{index}/")
+                    response = get(book_url, timeout=5)
+                    response.raise_for_status()
+                    check_for_redirect(response)
+                    book_props = parse_book_page(response.text)
+                    params = {
+                        "id": index,
+                    }
+                    txt_url = urljoin(HOST_URL, f"txt.php?{urlencode(params)}")
+                    filename = f"{index}. {book_props['title']}"
+                    download_txt(txt_url, filename)
 
-                image_source = urljoin(
-                    HOST_URL, book_props["relative_image_url"])
-                image_name = urlsplit(image_source).path.split("/")[-1]
-                download_image(image_source, image_name)
-            except HTTPError:
-                pass
+                    image_source = urljoin(
+                        HOST_URL, book_props["relative_image_url"])
+                    image_name = urlsplit(image_source).path.split("/")[-1]
+                    download_image(image_source, image_name)
+                    break
+                except HTTPError:
+                    print("HTTP error, skip request...", file=sys.stderr)
+                    break
+                except ConnectionError as err:
+                    print(f"{err} : wait 3 sec.", file=sys.stderr)
+                    sleep(3)
+                except Timeout:
+                    print("Timeout error, try again...", file=sys.stderr)
+
             progressbar.update()
