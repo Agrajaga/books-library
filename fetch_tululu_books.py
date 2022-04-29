@@ -8,6 +8,9 @@ from requests import HTTPError, Response, get
 from tqdm import tqdm
 
 
+HOST_URL = "https://tululu.org/"
+
+
 def parse_book_page(html_content: str) -> dict:
     soup = BeautifulSoup(html_content, "lxml")
     caption_tag = soup.find(id="content").find("h1")
@@ -76,7 +79,6 @@ def download_image(url, filename, folder="images/"):
 
 
 if __name__ == "__main__":
-    HOST_URL = "https://tululu.org/"
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--start_id", type=int, default=1)
@@ -99,7 +101,8 @@ if __name__ == "__main__":
                 filename = f"{index}. {book_props['title']}"
                 download_txt(txt_url, filename)
 
-                image_source = urljoin(HOST_URL, book_props["relative_image_url"])
+                image_source = urljoin(
+                    HOST_URL, book_props["relative_image_url"])
                 image_name = urlsplit(image_source).path.split("/")[-1]
                 download_image(image_source, image_name)
             except HTTPError:
