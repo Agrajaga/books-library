@@ -25,11 +25,9 @@ def parse_book_page(html_content: str) -> dict:
     genre_tags = soup.find("span", class_="d_book").find_all("a")
     genres = [genre_tag.text for genre_tag in genre_tags]
 
-    comments = []
-    for div_tag in soup.find_all(class_="texts"):
-        comment_tag = div_tag.find("span", class_="black")
-        comments.append(comment_tag.text)
-
+    comment_tags = soup.find_all(class_="texts")
+    comments = [tag.find("span", class_="black").text for tag in comment_tags]
+    
     return {
         "title": title,
         "author": author,
