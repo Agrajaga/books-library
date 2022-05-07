@@ -1,8 +1,7 @@
 import argparse
 import os
-import sys
 from time import sleep
-from urllib.parse import urlencode, urljoin, urlsplit
+from urllib.parse import unquote, urljoin, urlsplit
 
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
@@ -115,7 +114,8 @@ if __name__ == "__main__":
 
                     image_source = urljoin(
                         book_url, book_props["relative_image_url"])
-                    image_name = urlsplit(image_source).path.split("/")[-1]
+                    url_path = unquote(urlsplit(image_source).path)
+                    image_name = os.path.split(url_path)[1]
                     download_image(image_source, image_name, img_folder)
                     break
                 except HTTPError:
