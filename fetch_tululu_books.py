@@ -27,7 +27,7 @@ def parse_book_page(html_content: str) -> dict:
 
     comment_tags = soup.find_all(class_="texts")
     comments = [tag.find("span", class_="black").text for tag in comment_tags]
-    
+
     return {
         "title": title,
         "author": author,
@@ -43,14 +43,21 @@ def check_for_redirect(response: Response) -> None:
 
 
 def download_txt(url, url_params, filename, folder):
-    """Функция для скачивания текстовых файлов.
+    """Download text files
+
+    Downloads the text of the book from the link and saves it 
+    to the specified folder under the specified name.
+
     Args:
-        url (str): Cсылка на текст, который хочется скачать.
-        filename (str): Имя файла, с которым сохранять.
-        folder (str): Папка, куда сохранять.
+        url (str): download link
+        url_params (str): dictionary with link parameters
+        filename (str): the name of the file to save
+        folder (str): the name of the folder to save
+
     Returns:
-        str: Путь до файла, куда сохранён текст.
+        str: the full path to the file where the text is saved
     """
+
     response = get(url, params=url_params, timeout=5)
     response.raise_for_status()
     check_for_redirect(response)
@@ -77,7 +84,7 @@ def download_image(url, filename, folder):
 
 
 if __name__ == "__main__":
-    txt_folder = "books/" 
+    txt_folder = "books/"
     img_folder = "images/"
     os.makedirs(txt_folder, exist_ok=True)
     os.makedirs(img_folder, exist_ok=True)
