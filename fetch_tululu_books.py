@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--start_id", type=int, default=1)
-    parser.add_argument("--end_id", type=int, default=10)
+    parser.add_argument("--end_id", type=int, default=9)
     args = parser.parse_args()
 
     end_id = args.end_id + 1
@@ -114,12 +114,12 @@ if __name__ == "__main__":
                     download_txt(txt_url, params, filename, txt_folder)
 
                     image_source = urljoin(
-                        HOST_URL, book_props["relative_image_url"])
+                        book_url, book_props["relative_image_url"])
                     image_name = urlsplit(image_source).path.split("/")[-1]
                     download_image(image_source, image_name, img_folder)
                     break
                 except HTTPError:
-                    tqdm.write("HTTP error, skip request...")
+                    tqdm.write(f"HTTP error, skip request {index}...")
                     break
                 except ConnectionError as err:
                     tqdm.write(f"{err} : wait 3 sec.")
