@@ -42,7 +42,7 @@ def check_for_redirect(response: Response) -> None:
         raise HTTPError
 
 
-def download_txt(url, url_params, filename, folder="books/"):
+def download_txt(url, url_params, filename, folder):
     """Функция для скачивания текстовых файлов.
     Args:
         url (str): Cсылка на текст, который хочется скачать.
@@ -55,7 +55,6 @@ def download_txt(url, url_params, filename, folder="books/"):
     response.raise_for_status()
     check_for_redirect(response)
 
-    os.makedirs(folder, exist_ok=True)
     filepath = os.path.join(folder, sanitize_filename(f"{filename}.txt"))
 
     with open(filepath, "w") as txt_file:
@@ -64,12 +63,11 @@ def download_txt(url, url_params, filename, folder="books/"):
     return filepath
 
 
-def download_image(url, filename, folder="images/"):
+def download_image(url, filename, folder):
     response = get(url, timeout=5)
     response.raise_for_status()
     check_for_redirect(response)
 
-    os.makedirs(folder, exist_ok=True)
     filepath = os.path.join(folder, filename)
 
     with open(filepath, "wb") as txt_file:
@@ -79,7 +77,10 @@ def download_image(url, filename, folder="images/"):
 
 
 if __name__ == "__main__":
-    
+    txt_folder = "books/" 
+    img_folder = "images/"
+    os.makedirs(txt_folder, exist_ok=True)
+    os.makedirs(img_folder, exist_ok=True)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--start_id", type=int, default=1)
@@ -103,12 +104,12 @@ if __name__ == "__main__":
                     }
                     txt_url = urljoin(HOST_URL, "txt.php")
                     filename = f"{index}. {book_props['title']}"
-                    download_txt(txt_url, params, filename)
+                    download_txt(txt_url, params, filename, txt_folder)
 
                     image_source = urljoin(
                         HOST_URL, book_props["relative_image_url"])
                     image_name = urlsplit(image_source).path.split("/")[-1]
-                    download_image(image_source, image_name)
+                    download_image(image_source, image_name, img_folder)
                     break
                 except HTTPError:
                     tqdm.write("HTTP error, skip request...")
