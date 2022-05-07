@@ -120,7 +120,8 @@ if __name__ == "__main__":
                     download_image(image_source, image_name, img_folder)
                     break
                 except HTTPError:
-                    tqdm.write(f"HTTP error, skip request {index}...", file=sys.stderr)
+                    tqdm.write(
+                        f"HTTP error, skip request {index}...", file=sys.stderr)
                     break
                 except ConnectionError as err:
                     tqdm.write(f"{err} : wait 3 sec.", file=sys.stderr)
