@@ -42,7 +42,7 @@ def check_for_redirect(response: Response) -> None:
         raise HTTPError
 
 
-def download_txt(url, filename, folder="books/"):
+def download_txt(url, url_params, filename, folder="books/"):
     """Функция для скачивания текстовых файлов.
     Args:
         url (str): Cсылка на текст, который хочется скачать.
@@ -51,7 +51,7 @@ def download_txt(url, filename, folder="books/"):
     Returns:
         str: Путь до файла, куда сохранён текст.
     """
-    response = get(url, timeout=5)
+    response = get(url, params=url_params, timeout=5)
     response.raise_for_status()
     check_for_redirect(response)
 
@@ -79,15 +79,18 @@ def download_image(url, filename, folder="images/"):
 
 
 if __name__ == "__main__":
+    
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--start_id", type=int, default=1)
     parser.add_argument("--end_id", type=int, default=10)
-
     args = parser.parse_args()
 
-    with tqdm(total=args.end_id + 1 - args.start_id) as progressbar:
-        for index in range(args.start_id, args.end_id + 1):
+    end_id = args.end_id + 1
+    start_id = args.start_id
+
+    with tqdm(total=end_id - start_id) as progressbar:
+        for index in range(start_id, end_id):
             while True:
                 try:
                     book_url = urljoin(HOST_URL, f"b{index}/")
@@ -98,9 +101,9 @@ if __name__ == "__main__":
                     params = {
                         "id": index,
                     }
-                    txt_url = urljoin(HOST_URL, f"txt.php?{urlencode(params)}")
+                    txt_url = urljoin(HOST_URL, "txt.php")
                     filename = f"{index}. {book_props['title']}"
-                    download_txt(txt_url, filename)
+                    download_txt(txt_url, params, filename)
 
                     image_source = urljoin(
                         HOST_URL, book_props["relative_image_url"])
@@ -108,12 +111,12 @@ if __name__ == "__main__":
                     download_image(image_source, image_name)
                     break
                 except HTTPError:
-                    print("HTTP error, skip request...", file=sys.stderr)
+                    tqdm.write("HTTP error, skip request...")
                     break
                 except ConnectionError as err:
-                    print(f"{err} : wait 3 sec.", file=sys.stderr)
+                    tqdm.write(f"{err} : wait 3 sec.")
                     sleep(3)
                 except Timeout:
-                    print("Timeout error, try again...", file=sys.stderr)
+                    tqdm.write("Timeout error, try again...")
 
             progressbar.update()
