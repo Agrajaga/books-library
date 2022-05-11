@@ -22,6 +22,11 @@ def parse_book_page(html_content: str) -> dict:
     img_tag = soup.find(class_="bookimage").find("img")
     image_source = img_tag["src"]
 
+    table_tag = soup.find("table", class_="d_book")
+    txt_tag = table_tag.find("a", text="скачать txt")
+    if not txt_tag:
+        raise HTTPError
+ 
     genre_tags = soup.find("span", class_="d_book").find_all("a")
     genres = [genre_tag.text for genre_tag in genre_tags]
 
@@ -32,6 +37,7 @@ def parse_book_page(html_content: str) -> dict:
         "title": title,
         "author": author,
         "relative_image_url": image_source,
+        "relative_txt_url": txt_tag["href"],
         "genres": genres,
         "comments": comments,
     }
@@ -42,7 +48,7 @@ def check_for_redirect(response: Response) -> None:
         raise HTTPError
 
 
-def download_txt(url, url_params, filename, folder):
+def download_txt(url, filename, folder):
     """Download text files
 
     Downloads the text of the book from the link and saves it 
@@ -50,7 +56,6 @@ def download_txt(url, url_params, filename, folder):
 
     Args:
         url (str): download link
-        url_params (str): dictionary with link parameters
         filename (str): the name of the file to save
         folder (str): the name of the folder to save
 
@@ -58,7 +63,7 @@ def download_txt(url, url_params, filename, folder):
         str: the full path to the file where the text is saved
     """
 
-    response = get(url, params=url_params, timeout=5)
+    response = get(url, timeout=5)
     response.raise_for_status()
     check_for_redirect(response)
 
@@ -106,12 +111,10 @@ if __name__ == "__main__":
                     response.raise_for_status()
                     check_for_redirect(response)
                     book_props = parse_book_page(response.text)
-                    params = {
-                        "id": index,
-                    }
-                    txt_url = urljoin(HOST_URL, "txt.php")
+                    
+                    txt_url = urljoin(book_url, book_props["relative_txt_url"])
                     filename = f"{index}. {book_props['title']}"
-                    download_txt(txt_url, params, filename, txt_folder)
+                    download_txt(txt_url, filename, txt_folder)
 
                     image_source = urljoin(
                         book_url, book_props["relative_image_url"])
