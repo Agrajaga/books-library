@@ -13,22 +13,38 @@ from tqdm import tqdm
 import fetch_tululu_books as ftb
 
 if __name__ == "__main__":
-    total_pages = 1
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--start_page", type=int, default=1,
+                        help="Page number from which books will be downloaded. \
+                            If omitted - download from the first", metavar="start")
+    parser.add_argument("--end_page", type=int,
+                        help="Page number up to which books will be downloaded. \
+                            If omitted - download to the end", metavar="end")
+    parser.add_argument("--dest_folder", type=str,
+                        help="Data storage folder", metavar="path")
+    parser.add_argument("--json_path", type=str,
+                        metavar="path", help="Path to json-file",
+                        default="books.json")
+    parser.add_argument("--skip_imgs", action="store_true",
+                        help="Skip loading book images")
+    parser.add_argument("--skip_txt", action="store_true",
+                        help="Skip loading book texts")
+    args = parser.parse_args()
+
     sci_fi_genre_code = "l55/"
     txt_folder = "books/"
     img_folder = "images/"
+    json_filepath = args.json_path
 
+    if args.dest_folder:
+        txt_folder = os.path.join(args.dest_folder, txt_folder)
+        img_folder = os.path.join(args.dest_folder, img_folder)
     os.makedirs(txt_folder, exist_ok=True)
     os.makedirs(img_folder, exist_ok=True)
 
     books = []
     book_links = []
     base_url = urljoin(ftb.HOST_URL, sci_fi_genre_code)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--start_page", type=int, default=699)
-    parser.add_argument("--end_page", type=int)
-    args = parser.parse_args()
 
     start_page = args.start_page
     end_page = args.end_page
@@ -67,16 +83,19 @@ if __name__ == "__main__":
                     ftb.check_for_redirect(response)
                     book_props = ftb.parse_book_page(response.text)
 
-                    txt_url = urljoin(book_url, book_props["relative_txt_url"])
-                    txt_path = ftb.download_txt(
-                        txt_url, book_props['title'], txt_folder)
+                    if not args.skip_txt:
+                        txt_url = urljoin(
+                            book_url, book_props["relative_txt_url"])
+                        txt_path = ftb.download_txt(
+                            txt_url, book_props['title'], txt_folder)
 
-                    image_source = urljoin(
-                        book_url, book_props["relative_image_url"])
-                    url_path = unquote(urlsplit(image_source).path)
-                    image_name = os.path.split(url_path)[1]
-                    img_path = ftb.download_image(
-                        image_source, image_name, img_folder)
+                    if not args.skip_imgs:
+                        image_source = urljoin(
+                            book_url, book_props["relative_image_url"])
+                        url_path = unquote(urlsplit(image_source).path)
+                        image_name = os.path.split(url_path)[1]
+                        img_path = ftb.download_image(
+                            image_source, image_name, img_folder)
 
                     books.append({
                         "author": book_props["author"],
@@ -99,5 +118,5 @@ if __name__ == "__main__":
 
             progressbar.update()
 
-    with open("books.json", "w", encoding="utf8") as books_file:
+    with open(json_filepath, "w", encoding="utf8") as books_file:
         json.dump(books, books_file, ensure_ascii=False)
