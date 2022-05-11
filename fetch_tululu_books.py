@@ -15,23 +15,22 @@ HOST_URL = "https://tululu.org/"
 
 def parse_book_page(html_content: str) -> dict:
     soup = BeautifulSoup(html_content, "lxml")
-    caption_tag = soup.find(id="content").find("h1")
+    caption_tag = soup.select_one("#content h1")
     caption = caption_tag.text
     title, author = map(str.strip, caption.split("::"))
 
-    img_tag = soup.find(class_="bookimage").find("img")
+    img_tag = soup.select_one(".bookimage img")
     image_source = img_tag["src"]
 
-    table_tag = soup.find("table", class_="d_book")
-    txt_tag = table_tag.find("a", text="скачать txt")
+    txt_tag = soup.select_one("table.d_book a[title*='скачать книгу txt']")
     if not txt_tag:
         raise HTTPError
  
-    genre_tags = soup.find("span", class_="d_book").find_all("a")
+    genre_tags = soup.select("span.d_book a")
     genres = [genre_tag.text for genre_tag in genre_tags]
 
-    comment_tags = soup.find_all(class_="texts")
-    comments = [tag.find("span", class_="black").text for tag in comment_tags]
+    comment_tags = soup.select(".texts span.black")
+    comments = [tag.text for tag in comment_tags]
 
     return {
         "title": title,
@@ -96,7 +95,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--start_id", type=int, default=1)
-    parser.add_argument("--end_id", type=int, default=9)
+    parser.add_argument("--end_id", type=int, default=1)
     args = parser.parse_args()
 
     end_id = args.end_id + 1

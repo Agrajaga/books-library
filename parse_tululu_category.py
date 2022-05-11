@@ -12,7 +12,7 @@ from tqdm import tqdm
 import fetch_tululu_books as ftb
 
 if __name__ == "__main__":
-    total_pages = 4
+    total_pages = 1
     sci_fi_genre_code = "l55/"
     txt_folder = "books/"
     img_folder = "images/"
@@ -33,12 +33,10 @@ if __name__ == "__main__":
         response.raise_for_status()
 
         soup = BeautifulSoup(response.text, "lxml")
-        book_cards_elements = soup.find_all(class_="d_book")
 
-        for book_container in book_cards_elements:
-            book_relative_link = book_container.find("a")["href"]
-            book_link = urljoin(page_url, book_relative_link)
-            book_links.append(book_link)
+        links_selector = ".bookimage a"
+        book_links = [urljoin(page_url, a_tag["href"])
+                      for a_tag in soup.select(links_selector)]
 
     print(f"Download {len(book_links)} books")
     with tqdm(total=len(book_links)) as progressbar:
@@ -51,13 +49,15 @@ if __name__ == "__main__":
                     book_props = ftb.parse_book_page(response.text)
 
                     txt_url = urljoin(book_url, book_props["relative_txt_url"])
-                    txt_path = ftb.download_txt(txt_url, book_props['title'], txt_folder)
+                    txt_path = ftb.download_txt(
+                        txt_url, book_props['title'], txt_folder)
 
                     image_source = urljoin(
                         book_url, book_props["relative_image_url"])
                     url_path = unquote(urlsplit(image_source).path)
                     image_name = os.path.split(url_path)[1]
-                    img_path = ftb.download_image(image_source, image_name, img_folder)
+                    img_path = ftb.download_image(
+                        image_source, image_name, img_folder)
 
                     books.append({
                         "author": book_props["author"],
