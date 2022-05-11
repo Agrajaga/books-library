@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import sys
@@ -24,7 +25,19 @@ if __name__ == "__main__":
     book_links = []
     base_url = urljoin(ftb.HOST_URL, sci_fi_genre_code)
 
-    for page_number in range(1, total_pages + 1):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--start_page", type=int, default=699)
+    parser.add_argument("--end_page", type=int)
+    args = parser.parse_args()
+
+    start_page = args.start_page
+    end_page = args.end_page
+    if not end_page:
+        end_page = start_page + 1
+    page_number = start_page
+
+    book_links = []
+    while page_number < end_page:
         page_url = base_url
         if page_number > 1:
             page_url = urljoin(base_url, str(page_number))
@@ -34,11 +47,17 @@ if __name__ == "__main__":
 
         soup = BeautifulSoup(response.text, "lxml")
 
-        links_selector = ".bookimage a"
-        book_links = [urljoin(page_url, a_tag["href"])
-                      for a_tag in soup.select(links_selector)]
+        if not args.end_page:
+            last_page = soup.select_one("p.center > :last-child").text
+            end_page = int(last_page) + 1
 
-    print(f"Download {len(book_links)} books")
+        links_selector = ".bookimage a"
+        book_links.extend([urljoin(page_url, a_tag["href"])
+                           for a_tag in soup.select(links_selector)])
+        page_number += 1
+
+    tqdm.write(
+        f"Download {len(book_links)} books from page {start_page} to page {end_page}")
     with tqdm(total=len(book_links)) as progressbar:
         for index, book_url in enumerate(book_links):
             while True:
@@ -70,7 +89,7 @@ if __name__ == "__main__":
                     break
                 except HTTPError:
                     tqdm.write(
-                        f"HTTP error, skip book {index}...", file=sys.stderr)
+                        f"HTTP error, skip book {book_url}...", file=sys.stderr)
                     break
                 except ConnectionError as err:
                     tqdm.write(f"{err} : wait 3 sec.", file=sys.stderr)
