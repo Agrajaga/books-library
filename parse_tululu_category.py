@@ -57,8 +57,14 @@ if __name__ == "__main__":
         if page_number > 1:
             page_url = urljoin(base_url, str(page_number))
 
-        response = get(page_url)
-        response.raise_for_status()
+        try:
+            response = get(page_url)
+            response.raise_for_status()
+            ftb.check_for_redirect(response)
+        except HTTPError:
+            print(f"Page {page_url} not found")
+            page_number += 1
+            continue
 
         soup = BeautifulSoup(response.text, "lxml")
 
