@@ -21,7 +21,8 @@ if __name__ == "__main__":
                         help="Page number up to which books will be downloaded. \
                             If omitted - download to the end", metavar="end")
     parser.add_argument("--dest_folder", type=str,
-                        help="Data storage folder", metavar="path")
+                        help="Data storage folder. Default: current directory",
+                        metavar="path", default="")
     parser.add_argument("--json_path", type=str,
                         metavar="path", help="Path to json-file",
                         default="books.json")
@@ -36,14 +37,12 @@ if __name__ == "__main__":
     img_folder = "images/"
     json_filepath = args.json_path
 
-    if args.dest_folder:
-        txt_folder = os.path.join(args.dest_folder, txt_folder)
-        img_folder = os.path.join(args.dest_folder, img_folder)
+    txt_folder = os.path.join(args.dest_folder, txt_folder)
+    img_folder = os.path.join(args.dest_folder, img_folder)
     os.makedirs(txt_folder, exist_ok=True)
     os.makedirs(img_folder, exist_ok=True)
 
     books = []
-    book_links = []
     base_url = urljoin(ftb.HOST_URL, sci_fi_genre_code)
 
     start_page = args.start_page
