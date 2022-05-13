@@ -54,29 +54,34 @@ if __name__ == "__main__":
     book_links = []
     while page_number < end_page:
         page_url = base_url
-        if page_number > 1:
-            page_url = urljoin(base_url, str(page_number))
+        page_url = urljoin(base_url, str(page_number))
 
-        try:
-            response = get(page_url)
-            response.raise_for_status()
-            ftb.check_for_redirect(response)
-        except HTTPError:
-            print(f"Page {page_url} not found")
-            page_number += 1
-            continue
+        while True:
+            try:
+                response = get(page_url, timeout=5)
+                response.raise_for_status()
+                ftb.check_for_redirect(response)
+                soup = BeautifulSoup(response.text, "lxml")
 
-        soup = BeautifulSoup(response.text, "lxml")
+                if not args.end_page:
+                    last_page = soup.select_one("p.center > :last-child").text
+                    end_page = int(last_page) + 1
 
-        if not args.end_page:
-            last_page = soup.select_one("p.center > :last-child").text
-            end_page = int(last_page) + 1
-
-        links_selector = ".bookimage a"
-        book_links.extend([urljoin(page_url, a_tag["href"])
-                           for a_tag in soup.select(links_selector)])
+                links_selector = ".bookimage a"
+                book_links.extend([urljoin(page_url, a_tag["href"])
+                                for a_tag in soup.select(links_selector)])
+                break
+            except HTTPError:
+                tqdm.write(f"Page {page_url} not found", file=sys.stderr)
+                break
+            except ConnectionError as err:
+                tqdm.write(f"{err} : wait 3 sec.", file=sys.stderr)
+                sleep(3)
+            except Timeout:
+                tqdm.write("Timeout error, try again...", file=sys.stderr)
+        
         page_number += 1
-
+        
     tqdm.write(
         f"Download {len(book_links)} books from page {start_page} to page {end_page}")
     with tqdm(total=len(book_links)) as progressbar:
