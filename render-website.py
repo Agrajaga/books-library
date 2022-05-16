@@ -1,7 +1,8 @@
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from livereload import Server
 import json
 
-if __name__ == "__main__":
+def on_reload():
     env = Environment(
         loader=FileSystemLoader("."),
         autoescape=select_autoescape(["html"])
@@ -19,3 +20,14 @@ if __name__ == "__main__":
 
     with open("index.html", "w", encoding="utf8") as file:
         file.write(rendered_page)
+
+    print("Site rebuild")
+
+
+if __name__ == "__main__":
+    on_reload()
+    server = Server()
+    server.watch("template.html", on_reload)
+    server.serve(root=".")
+
+    
