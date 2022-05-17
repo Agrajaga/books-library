@@ -1,3 +1,4 @@
+import os
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from livereload import Server
 from more_itertools import chunked
@@ -15,17 +16,19 @@ def on_reload():
 
     books = json.loads(books_json)
 
-    rendered_page = template.render(
-        books=list(chunked(books, 2))
-    )
+    for page_num, books_chunk in enumerate(list(chunked(books, 10))):
+        rendered_page = template.render(
+            books=list(chunked(books_chunk, 2))
+        )
 
-    with open("index.html", "w", encoding="utf8") as file:
-        file.write(rendered_page)
+        with open(f"pages/index{page_num + 1}.html", "w", encoding="utf8") as file:
+            file.write(rendered_page)
 
     print("Site rebuild")
 
 
 if __name__ == "__main__":
+    os.makedirs("pages", exist_ok=True)
     on_reload()
     server = Server()
     server.watch("template.html", on_reload)
