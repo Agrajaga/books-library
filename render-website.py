@@ -16,12 +16,15 @@ def on_reload():
 
     books = json.loads(books_json)
 
-    for page_num, books_chunk in enumerate(list(chunked(books, 10))):
+    chunked_books = list(chunked(books, 10))
+    for page_num, books_chunk in enumerate(chunked_books, start=1):
         rendered_page = template.render(
-            books=list(chunked(books_chunk, 2))
+            books=list(chunked(books_chunk, 2)),
+            current_page=page_num,
+            total_page=len(chunked_books),
         )
 
-        with open(f"pages/index{page_num + 1}.html", "w", encoding="utf8") as file:
+        with open(f"pages/index{page_num}.html", "w", encoding="utf8") as file:
             file.write(rendered_page)
 
     print("Site rebuild")
