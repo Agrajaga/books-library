@@ -24,14 +24,14 @@ def on_reload():
             total_page=len(chunked_books),
         )
 
-        with open(f"pages/index{page_num}.html", "w", encoding="utf8") as file:
+        with open(f"library/pages/index{page_num}.html", "w", encoding="utf8") as file:
             file.write(rendered_page)
 
     print("Site rebuild")
 
 
 if __name__ == "__main__":
-    os.makedirs("pages", exist_ok=True)
+    os.makedirs("library/pages", exist_ok=True)
     on_reload()
     server = Server()
     server.watch("template.html", on_reload)
