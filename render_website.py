@@ -12,9 +12,7 @@ def on_reload():
     template = env.get_template("template.html")
 
     with open("books.json", "r") as books_file:
-        books_json = books_file.read()
-
-    books = json.loads(books_json)
+        books = json.load(books_file)
 
     chunked_books = list(chunked(books, 10))
     for page_num, books_chunk in enumerate(chunked_books, start=1):
